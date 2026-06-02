@@ -1,40 +1,57 @@
 # -*- coding: utf-8 -*-
+"""Define cohesive material/section and mesh the mesoscale continuum part."""
+from __future__ import print_function
+
 from abaqus import *
 from abaqusConstants import *
-import regionToolset
 import mesh
+import regionToolset
 
-def setup_mesh_and_cohesive():
-    # اتصال به مدل و قطعه‌ای که از قبل ساخته‌اید
-    myModel = mdb.models['Model-1']
-    myPart = myModel.parts['Specimen']
-    
-    # 1. تعریف متریال چسبنده (Cohesive Material)
-    coh_mat_name = 'Cohesive_Mat'
-    if coh_mat_name not in myModel.materials:
-        coh_mat = myModel.Material(name=coh_mat_name)
-        
-        # اصلاح ارور: استفاده از کلمه صحیح TRACTION
-        coh_mat.Elastic(type=TRACTION, table=((1e5, 1e5, 1e5), ))
-        
-        # معیار شروع آسیب (Maximum Nominal Stress)
-        coh_mat.MaxsDamageInitiation(table=((60.0, 60.0, 60.0), ))
-        
-        # تکامل آسیب (Damage Evolution)
-        coh_mat.maxsDamageInitiation.DamageEvolution(
-            type=ENERGY, softening=LINEAR, table=((0.2, 0.2, 0.2), )
-        )
-        print("Cohesive material created successfully.")
+MODEL_NAME = 'Model-1'
+PART_NAME = 'Specimen'
+COH_MAT_NAME = 'Cohesive_Mat'
+COH_SECTION_NAME = 'Cohesive_Sec'
 
-    # 2. مش‌بندی (Meshing)
-    myPart.seedPart(size=0.125, deviationFactor=0.1, minSizeFactor=0.1)
-    
-    region = regionToolset.Region(faces=myPart.faces)
-    elemType = mesh.ElemType(elemCode=CPS4R, elemLibrary=STANDARD)
-    myPart.setElementType(regions=region, elemTypes=(elemType, ))
-    
-    myPart.generateMesh()
-    print("Structured mesh generated successfully!")
 
-if __name__ == "__main__":
-    setup_mesh_and_cohesive()
+def create_cohesive_material(model, strength=17.0, fracture_energy=0.2,
+                             penalty_stiffness=1.0e8):
+    """Create the baseline bilinear traction-separation cohesive material."""
+    if COH_MAT_NAME in model.materials.keys():
+        return model.materials[COH_MAT_NAME]
+
+    material = model.Material(name=COH_MAT_NAME)
+    material.Elastic(type=TRACTION,
+                     table=((penalty_stiffness, penalty_stiffness, penalty_stiffness),))
+    material.MaxsDamageInitiation(table=((strength, strength, strength),))
+    material.maxsDamageInitiation.DamageEvolution(type=ENERGY, softening=LINEAR,
+                                                  table=((fracture_energy,),))
+    print('Cohesive material created: %s' % COH_MAT_NAME)
+    return material
+
+
+def create_cohesive_section(model):
+    if COH_SECTION_NAME not in model.sections.keys():
+        model.CohesiveSection(name=COH_SECTION_NAME, material=COH_MAT_NAME,
+                              response=TRACTION_SEPARATION,
+                              initialThicknessType=GEOMETRY)
+        print('Cohesive section created: %s' % COH_SECTION_NAME)
+
+
+def mesh_continuum_part(element_size=0.125):
+    """Assign plane-stress elements and generate the mesh for Specimen."""
+    model = mdb.models[MODEL_NAME]
+    part = model.parts[PART_NAME]
+
+    create_cohesive_material(model)
+    create_cohesive_section(model)
+
+    part.seedPart(size=element_size, deviationFactor=0.1, minSizeFactor=0.1)
+    face_region = regionToolset.Region(faces=part.faces)
+    element_type = mesh.ElemType(elemCode=CPS4R, elemLibrary=STANDARD)
+    part.setElementType(regions=face_region, elemTypes=(element_type,))
+    part.generateMesh()
+    print('Continuum mesh generated for %s with element size %g.' % (PART_NAME, element_size))
+
+
+if __name__ == '__main__':
+    mesh_continuum_part()
