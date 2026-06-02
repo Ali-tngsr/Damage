@@ -47,19 +47,21 @@ def setup_assembly_and_run(L=70.0, total_thickness=1.0, applied_strain=0.025,
         model.fieldOutputRequests['F-Output-1'].setValues(
             variables=('S', 'E', 'U', 'RF', 'SDEG', 'STATUS', 'DMICRT'))
 
-    tol = 1.0e-4
-    left_edges = instance.edges.getByBoundingBox(xMin=-tol, yMin=-tol, zMin=-tol,
+tol = 1.0e-4
+    # تغییر از edges به nodes به دلیل استفاده از Orphan Mesh
+    left_nodes = instance.nodes.getByBoundingBox(xMin=-tol, yMin=-tol, zMin=-tol,
                                                 xMax=tol, yMax=total_thickness + tol, zMax=tol)
-    right_edges = instance.edges.getByBoundingBox(xMin=L - tol, yMin=-tol, zMin=-tol,
+    right_nodes = instance.nodes.getByBoundingBox(xMin=L - tol, yMin=-tol, zMin=-tol,
                                                  xMax=L + tol, yMax=total_thickness + tol, zMax=tol)
-    bottom_edges = instance.edges.getByBoundingBox(xMin=-tol, yMin=-tol, zMin=-tol,
+    bottom_nodes = instance.nodes.getByBoundingBox(xMin=-tol, yMin=-tol, zMin=-tol,
                                                   xMax=L + tol, yMax=tol, zMax=tol)
 
     for set_name in ('Left_Edge', 'Right_Edge', 'Bottom_Edge'):
         _delete_set_if_exists(assembly, set_name)
-    left_set = assembly.Set(edges=left_edges, name='Left_Edge')
-    right_set = assembly.Set(edges=right_edges, name='Right_Edge')
-    bottom_set = assembly.Set(edges=bottom_edges, name='Bottom_Edge')
+        
+    left_set = assembly.Set(nodes=left_nodes, name='Left_Edge')
+    right_set = assembly.Set(nodes=right_nodes, name='Right_Edge')
+    bottom_set = assembly.Set(nodes=bottom_nodes, name='Bottom_Edge')
 
     if 'Fix_Left_X' not in model.boundaryConditions.keys():
         model.DisplacementBC(name='Fix_Left_X', createStepName='Step-1',
