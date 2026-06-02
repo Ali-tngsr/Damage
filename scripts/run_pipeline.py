@@ -15,8 +15,11 @@ import sys
 from abaqus import mdb
 from abaqusConstants import OFF
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPO_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
+import inspect
+try:
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))REPO_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
