@@ -33,6 +33,21 @@ def setup_assembly_and_run(L=70.0, total_thickness=1.0, applied_strain=0.025,
     part_name = 'Specimen_Orphan' if 'Specimen_Orphan' in model.parts.keys() else 'Specimen'
     part = model.parts[part_name]
 
+    # === اعمال جهت‌گیری متریال مستقیماً روی المان‌های شبکه مستقل ===
+    import regionToolset
+    for sa in part.sectionAssignments:
+        # فقط متریال‌های لایه 0 و 90 درجه (کامپوزیت) را انتخاب می‌کنیم نه چسب‌ها را
+        if '0deg' in sa.sectionName or '90deg' in sa.sectionName:
+            part.MaterialOrientation(
+                region=sa.region,
+                orientationType=GLOBAL,
+                axis=AXIS_3,
+                additionalRotationType=ROTATION_NONE,
+                localCsys=None,
+                fieldName='',
+                stackDirection=STACK_3
+            )
+    # ===============================================================
     if INSTANCE_NAME not in assembly.instances.keys():
         instance = assembly.Instance(name=INSTANCE_NAME, part=part, dependent=ON)
     else:
