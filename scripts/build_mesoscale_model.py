@@ -148,6 +148,20 @@ def build_model(L=70.0, t_0=0.25, t_90=0.5, rho_sat=8.0, seed=42,
         )
         part.Set(faces=faces_90, name=PLY90_SET_NAME)
 
+    # === رفع خطای جهت‌گیری متریال (Material Orientation) ===
+    # اختصاص محورهای مختصات جهانی به کل سطوح مدل
+    all_faces = part.faces
+    part.MaterialOrientation(
+        region=regionToolset.Region(faces=all_faces),
+        orientationType=GLOBAL,
+        axis=AXIS_3,
+        additionalRotationType=ROTATION_NONE,
+        localCsys=None,
+        fieldName='',
+        stackDirection=STACK_3
+    )
+    # ========================================================
+    
     print('Created %d continuum cells and %d cached materials.' % (n_cols * 7, len(model.materials.keys())))
     print('Ply-90 face set: %s' % PLY90_SET_NAME)
     return model, part, vf_field
