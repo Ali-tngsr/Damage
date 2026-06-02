@@ -38,7 +38,13 @@ def setup_assembly_and_run(L=70.0, total_thickness=1.0, applied_strain=0.025,
     for sa in part.sectionAssignments:
         # فقط متریال‌های لایه 0 و 90 درجه (کامپوزیت) را انتخاب می‌کنیم نه چسب‌ها را
         if '0deg' in sa.sectionName or '90deg' in sa.sectionName:
-            elem_array = sa.region.elements
+            
+            # هندل کردن رفتار دوگانه آباکوس (گاهی آبجکت و گاهی تاپل برمی‌گرداند)
+            try:
+                elem_array = sa.region.elements
+            except AttributeError:
+                elem_array = sa.region[0]
+                
             if len(elem_array) > 0:
                 part.MaterialOrientation(
                     region=regionToolset.Region(elements=elem_array),
