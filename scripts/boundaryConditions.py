@@ -47,7 +47,7 @@ def setup_assembly_and_run(L=70.0, total_thickness=1.0, applied_strain=0.025,
         model.fieldOutputRequests['F-Output-1'].setValues(
             variables=('S', 'E', 'U', 'RF', 'SDEG', 'STATUS', 'DMICRT'))
 
-tol = 1.0e-4
+    tol = 1.0e-4
     # تغییر از edges به nodes به دلیل استفاده از Orphan Mesh
     left_nodes = instance.nodes.getByBoundingBox(xMin=-tol, yMin=-tol, zMin=-tol,
                                                 xMax=tol, yMax=total_thickness + tol, zMax=tol)
