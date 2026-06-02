@@ -43,6 +43,10 @@ def _create_engineering_material(model, name, props, orientation):
     if name in model.materials.keys():
         return
     model.Material(name=name)
+
+    # محاسبه ضریب پواسون فرعی برای جلوگیری از خطای ترمودینامیکی آباکوس
+    nu21 = props['nu12'] * (props['E22'] / props['E11'])
+
     if orientation == '0deg':
         table = ((props['E11'], props['E22'], props['E22'],
                   props['nu12'], props['nu12'], props['nu23'],
@@ -50,13 +54,13 @@ def _create_engineering_material(model, name, props, orientation):
     elif orientation == '90deg':
         # In the 2D x-y model, the 90-degree fiber direction is through the
         # local 3-axis, leaving the transverse response in the x-y plane.
+        # جایگزینی ضریب پواسون اصلی با فرعی در اینجا انجام شده است
         table = ((props['E22'], props['E22'], props['E11'],
-                  props['nu23'], props['nu12'], props['nu12'],
+                  props['nu23'], nu21, nu21,
                   props['G23'], props['G12'], props['G12']),)
     else:
         raise ValueError('Unknown orientation: %s' % orientation)
     model.materials[name].Elastic(type=ENGINEERING_CONSTANTS, table=table)
-
 
 def _create_section(model, section_name, material_name):
     if section_name not in model.sections.keys():
