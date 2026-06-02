@@ -5,7 +5,16 @@ from __future__ import print_function
 from abaqus import *
 from abaqusConstants import *
 
+# وارد کردن صریح ماژول‌های آباکوس برای اجرای بدون رابط گرافیکی
+import part
+import assembly
+import step
+import load
+import job
+
 MODEL_NAME = 'Model-1'
+
+
 INSTANCE_NAME = 'Specimen_Inst'
 JOB_NAME = 'Tensile_Test_Stochastic'
 
