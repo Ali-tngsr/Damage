@@ -130,10 +130,19 @@ def build_model(L=70.0, t_0=0.25, t_90=0.5, rho_sat=8.0, seed=42,
             y_c = t_0 + (row_idx + 0.5) * row_thickness
             face_90 = part.faces.findAt(((x_c, y_c, 0.0),))
             part.SectionAssignment(region=regionToolset.Region(faces=face_90), sectionName=sec_name)
-            ply90_faces.append(face_90[0])
 
+    # Use Bounding Box to cleanly select all 90-degree faces for the Set
     if PLY90_SET_NAME not in part.sets.keys():
-        part.Set(faces=tuple(ply90_faces), name=PLY90_SET_NAME)
+        tol = 1e-4
+        faces_90 = part.faces.getByBoundingBox(
+            xMin=-tol, 
+            yMin=t_0 - tol, 
+            zMin=-tol, 
+            xMax=L + tol, 
+            yMax=t_0 + t_90 + tol, 
+            zMax=tol
+        )
+        part.Set(faces=faces_90, name=PLY90_SET_NAME)
 
     print('Created %d continuum cells and %d cached materials.' % (n_cols * 7, len(model.materials.keys())))
     print('Ply-90 face set: %s' % PLY90_SET_NAME)
