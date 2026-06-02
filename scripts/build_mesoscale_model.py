@@ -20,6 +20,7 @@ try:
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 except NameError:
     SCRIPT_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
@@ -31,8 +32,10 @@ PLY90_SET_NAME = 'Ply90_Faces'
 
 
 def _delete_if_exists(repository, name):
-    if name in repository.keys():
+    try:
         del repository[name]
+    except KeyError:
+        pass
 
 
 def _as_face_region(face_obj):
