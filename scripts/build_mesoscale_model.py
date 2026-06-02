@@ -38,10 +38,6 @@ def _delete_if_exists(repository, name):
         pass
 
 
-def _as_face_region(face_obj):
-    return regionToolset.Region(faces=(face_obj,))
-
-
 def _create_engineering_material(model, name, props, orientation):
     """Create an orthotropic elastic material if it does not already exist."""
     if name in model.materials.keys():
@@ -116,11 +112,11 @@ def build_model(L=70.0, t_0=0.25, t_90=0.5, rho_sat=8.0, seed=42,
     for col_idx in range(n_cols):
         x_c = (col_idx + 0.5) * dx
 
-        bottom_face = part.faces.findAt((x_c, t_0 / 2.0, 0.0))
-        part.SectionAssignment(region=_as_face_region(bottom_face), sectionName=sec_0)
+        bottom_face = part.faces.findAt(((x_c, t_0 / 2.0, 0.0),))
+        part.SectionAssignment(region=regionToolset.Region(faces=bottom_face), sectionName=sec_0)
 
-        top_face = part.faces.findAt((x_c, t_0 + t_90 + (t_0 / 2.0), 0.0))
-        part.SectionAssignment(region=_as_face_region(top_face), sectionName=sec_0)
+        top_face = part.faces.findAt(((x_c, t_0 + t_90 + (t_0 / 2.0), 0.0),))
+        part.SectionAssignment(region=regionToolset.Region(faces=top_face), sectionName=sec_0)
 
         for row_idx in range(5):
             vf_value = vf_field[row_idx][col_idx]
@@ -132,9 +128,9 @@ def build_model(L=70.0, t_0=0.25, t_90=0.5, rho_sat=8.0, seed=42,
             _create_section(model, sec_name, mat_name)
 
             y_c = t_0 + (row_idx + 0.5) * row_thickness
-            face_90 = part.faces.findAt((x_c, y_c, 0.0))
-            part.SectionAssignment(region=_as_face_region(face_90), sectionName=sec_name)
-            ply90_faces.append(face_90)
+            face_90 = part.faces.findAt(((x_c, y_c, 0.0),))
+            part.SectionAssignment(region=regionToolset.Region(faces=face_90), sectionName=sec_name)
+            ply90_faces.append(face_90[0])
 
     if PLY90_SET_NAME not in part.sets.keys():
         part.Set(faces=tuple(ply90_faces), name=PLY90_SET_NAME)
