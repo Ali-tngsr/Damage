@@ -58,42 +58,47 @@ def create_cohesive_section(model):
 
 
 def mesh_continuum_part(element_size=0.125):
-    """Assign plane-stress elements and generate the mesh for Specimen."""
+    """Assign appropriate elements and sections to continuum and cohesive faces."""
     model = mdb.models[MODEL_NAME]
     part = model.parts[PART_NAME]
 
+    # ساخت متریال و سکشن چسبنده اصلی
     create_cohesive_material(model)
     create_cohesive_section(model)
 
     part.seedPart(size=element_size, deviationFactor=0.1, minSizeFactor=0.1)
-    face_region = regionToolset.Region(faces=part.faces)
-    element_type = mesh.ElemType(elemCode=CPS4R, elemLibrary=STANDARD)
-    part.setElementType(regions=face_region, elemTypes=(element_type,))
-    part.generateMesh()
-    print('Continuum mesh generated for %s with element size %g.' % (PART_NAME, element_size))
-    # پیدا کردن سطوح مربوط به نوارهای باریک (Cohesive) و اختصاص المان COH2D4
-    import mesh
+
+    # === ترفند هوشمند مساحت برای جداسازی قطعات چسبنده از قطعات اصلی ===
     cohesive_faces = []
-    # dx و n_cols را بر اساس مقادیر L و rho_sat محاسبه کنید
-    cohesive_width = 1e-4
-    
-    for col_idx in range(1, n_cols):
-        x_center = (col_idx * dx) + (cohesive_width / 2.0)
-        # پیدا کردن فیس‌های نوار باریک در طول ضخامت
-        faces = part.faces.getByBoundingBox(
-            xMin=x_center - cohesive_width, xMax=x_center + cohesive_width,
-            yMin=-0.1, yMax=t_total + 0.1, zMin=-0.1, zMax=0.1)
-        for f in faces:
-            cohesive_faces.append(f)
-            
+    continuum_faces = []
+
+    for face in part.faces:
+        # نوارهای ترک مساحتی بسیار کوچکتر از سلول‌های اصلی دارند
+        if face.getSize() < 0.005:
+            cohesive_faces.append(face)
+        else:
+            continuum_faces.append(face)
+
+    import mesh
+    import regionToolset
+
+    # ۱. اختصاص المان به قطعات پیوسته (کامپوزیت)
+    if continuum_faces:
+        cont_region = regionToolset.Region(faces=mesh.MeshFaceArray(continuum_faces))
+        cont_elem = mesh.ElemType(elemCode=CPS4R, elemLibrary=STANDARD)
+        part.setElementType(regions=cont_region, elemTypes=(cont_elem,))
+
+    # ۲. اختصاص المان و سکشن خرابی به مسیرهای ترک
     if cohesive_faces:
-        face_array = mesh.MeshFaceArray(cohesive_faces)
-        coh_region = regionToolset.Region(faces=face_array)
-        coh_elem_type = mesh.ElemType(elemCode=COH2D4, elemLibrary=STANDARD)
-        part.setElementType(regions=coh_region, elemTypes=(coh_elem_type,))
-        
-        # این خط جدید را اضافه کنید تا یک گروه از این المان‌ها ساخته شود
-        part.Set(faces=face_array, name='Cohesive_Set')
+        coh_region = regionToolset.Region(faces=mesh.MeshFaceArray(cohesive_faces))
+        coh_elem = mesh.ElemType(elemCode=COH2D4, elemLibrary=STANDARD)
+        part.setElementType(regions=coh_region, elemTypes=(coh_elem,))
+        # مهم: تحمیل سکشن چسبنده برای فعال شدن متغیر SDEG
+        part.SectionAssignment(region=coh_region, sectionName=COH_SECTION_NAME)
+        part.Set(faces=mesh.MeshFaceArray(cohesive_faces), name='Cohesive_Elements_Set')
+
+    part.generateMesh()
+    print('SUCCESS: Elements and sections correctly partitioned by area.')
 
 if __name__ == '__main__':
     mesh_continuum_part()
