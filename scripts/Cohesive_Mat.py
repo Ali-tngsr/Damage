@@ -87,9 +87,13 @@ def mesh_continuum_part(element_size=0.125):
             cohesive_faces.append(f)
             
     if cohesive_faces:
-        coh_region = regionToolset.Region(faces=mesh.MeshFaceArray(cohesive_faces))
+        face_array = mesh.MeshFaceArray(cohesive_faces)
+        coh_region = regionToolset.Region(faces=face_array)
         coh_elem_type = mesh.ElemType(elemCode=COH2D4, elemLibrary=STANDARD)
         part.setElementType(regions=coh_region, elemTypes=(coh_elem_type,))
+        
+        # این خط جدید را اضافه کنید تا یک گروه از این المان‌ها ساخته شود
+        part.Set(faces=face_array, name='Cohesive_Set')
 
 if __name__ == '__main__':
     mesh_continuum_part()
