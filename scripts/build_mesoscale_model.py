@@ -88,26 +88,23 @@ def build_model(L=70.0, t_0=0.25, t_90=0.5, rho_sat=8.0, seed=42,
     part.PartitionFaceBySketch(faces=part.faces, sketch=vert)
 
     # =========================================================================
-    # کد جدید: ساخت خودکار ست لبه‌ها برای مسیرهای ترک (Potential_Crack_Edges)
+    # کد جدید: ساخت خودکار ست لبه‌ها با متد کاملاً ایمن findAt
     # =========================================================================
-    tol = 1.0e-4
-    crack_edges = []
+    crack_edges_list = []
     for col_idx in range(1, n_cols):
         x_pos = col_idx * dx
-        # پیدا کردن لبه‌های عمودی که دقیقاً در طول لایه 90 درجه (t_0 تا t_0 + t_90) قرار دارند
-        edges_at_x = part.edges.getByBoundingBox(
-            xMin=x_pos - tol, xMax=x_pos + tol,
-            yMin=t_0 - tol, yMax=t_0 + t_90 + tol,
-            zMin=-tol, zMax=tol
-        )
-        for edge in edges_at_x:
-            crack_edges.append(edge)
+        # برای هر 5 ردیف داخل لایه 90 درجه، نقطه وسط لبه عمودی را استخراج می‌کنیم
+        for row_idx in range(5):
+            y_center = t_0 + (row_idx + 0.5) * row_thickness
+            # فرمت مخصوص آباکوس برای findAt
+            crack_edges_list.append(((x_pos, y_center, 0.0),))
 
-    if crack_edges:
-        part.Set(edges=tuple(crack_edges), name='Potential_Crack_Edges')
-        print('SUCCESS: Created Edge Set "Potential_Crack_Edges" with %d lines.' % len(crack_edges))
+    if crack_edges_list:
+        # پیدا کردن یکپارچه تمام لبه‌ها که مستقیماً در آباکوس قابل تبدیل به Set است
+        valid_edges = part.edges.findAt(*crack_edges_list)
+        part.Set(edges=valid_edges, name='Potential_Crack_Edges')
+        print('SUCCESS: Created Edge Set "Potential_Crack_Edges".')
     # =========================================================================
-
     vf_field = assign_vf_field(n_cols, 5, seed)
     props_0 = get_properties(45.0, units='MPa')
     mat_0, sec_0 = 'Mat_0deg_Vf45', 'Sec_0deg_Vf45'
