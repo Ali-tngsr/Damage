@@ -51,41 +51,10 @@ def setup_assembly_and_run(L=70.0, total_thickness=1.0, applied_strain=0.025,
     # تنظیمات خروجی میدانی (Field Output) با مکانیزم دفاعی هوشمند
     # ===============================================================
     # ۱. خروجی‌های عمومی (تنش، کرنش و جابه‌جایی) برای کل قطعه
+    # درخواست خروجی یکپارچه و اجباری برای کل مدل
     if 'F-Output-1' in model.fieldOutputRequests.keys():
         model.fieldOutputRequests['F-Output-1'].setValues(
-            variables=('S', 'E', 'U', 'RF'))
-
-    # ۲. خروجی‌های خرابی، منحصراً برای گروه المان‌های چسبنده (برای حذف هشدارهای زرد رنگ)
-    # بررسی نام ست به صورت Case-Insensitive برای همخوانی کامل با موتور آباکوس
-    has_cohesive_set = False
-    target_set_name = 'Cohesive_Set'
-    
-    for set_name in instance.sets.keys():
-        if set_name.lower() == 'cohesive_set':
-            has_cohesive_set = True
-            target_set_name = set_name
-            break
-            
-    if has_cohesive_set:
-        # اگر ست پیدا شد، درخواست خروجی قبلی را پاک و درخواست اختصاصی جدید را ثبت می‌کنیم
-        if 'F-Output-Damage' in model.fieldOutputRequests.keys():
-            del model.fieldOutputRequests['F-Output-Damage']
-            
-        model.FieldOutputRequest(
-            name='F-Output-Damage', 
-            createStepName='Step-1',
-            variables=('SDEG', 'STATUS', 'DMICRT'),
-            region=instance.sets[target_set_name]
-        )
-        print('SUCCESS: Focused Field Output created for Cohesive elements.')
-    else:
-        # سیستم پشتیبان ایمن (Safety Fallback):
-        # اگر به هر دلیلی این ست در اینستنس گم شده بود،
-        # متغیرهای آسیب را به همان خروجی کل قطعه برمی‌گردانیم تا مطمئن شویم نتایج از دست نمی‌روند.
-        if 'F-Output-1' in model.fieldOutputRequests.keys():
-            model.fieldOutputRequests['F-Output-1'].setValues(
-                variables=('S', 'E', 'U', 'RF', 'SDEG', 'STATUS', 'DMICRT'))
-        print('NOTICE: Cohesive_Set not found on instance. Damage outputs requested globally as fallback.')
+            variables=('S', 'E', 'U', 'RF', 'SDEG', 'STATUS', 'DMICRT'))
     # ===============================================================
 
     tol = 1.0e-4
