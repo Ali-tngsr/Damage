@@ -98,9 +98,15 @@ def build_model(L=70.0, t_0=0.25, t_90=0.5, rho_sat=8.0, seed=42,
     part.PartitionFaceBySketch(faces=part.faces, sketch=horiz)
 
     vert = model.ConstrainedSketch(name='partition_vertical', sheetSize=max(200.0, 2.0 * L))
+    cohesive_width = 1e-4  # عرض بسیار کوچک برای ساخت ستون‌های چسبنده
+    
     for col_idx in range(1, n_cols):
         x_pos = col_idx * dx
+        # خط اول
         vert.Line(point1=(x_pos, 0.0), point2=(x_pos, t_total))
+        # خط دوم برای ایجاد نوار باریک Cohesive
+        vert.Line(point1=(x_pos + cohesive_width, 0.0), point2=(x_pos + cohesive_width, t_total))
+        
     part.PartitionFaceBySketch(faces=part.faces, sketch=vert)
 
     vf_field = assign_vf_field(n_cols, 5, seed)
