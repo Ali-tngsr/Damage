@@ -71,7 +71,25 @@ def mesh_continuum_part(element_size=0.125):
     part.setElementType(regions=face_region, elemTypes=(element_type,))
     part.generateMesh()
     print('Continuum mesh generated for %s with element size %g.' % (PART_NAME, element_size))
-
+    # پیدا کردن سطوح مربوط به نوارهای باریک (Cohesive) و اختصاص المان COH2D4
+    import mesh
+    cohesive_faces = []
+    # dx و n_cols را بر اساس مقادیر L و rho_sat محاسبه کنید
+    cohesive_width = 1e-4
+    
+    for col_idx in range(1, n_cols):
+        x_center = (col_idx * dx) + (cohesive_width / 2.0)
+        # پیدا کردن فیس‌های نوار باریک در طول ضخامت
+        faces = part.faces.getByBoundingBox(
+            xMin=x_center - cohesive_width, xMax=x_center + cohesive_width,
+            yMin=-0.1, yMax=t_total + 0.1, zMin=-0.1, zMax=0.1)
+        for f in faces:
+            cohesive_faces.append(f)
+            
+    if cohesive_faces:
+        coh_region = regionToolset.Region(faces=mesh.MeshFaceArray(cohesive_faces))
+        coh_elem_type = mesh.ElemType(elemCode=COH2D4, elemLibrary=STANDARD)
+        part.setElementType(regions=coh_region, elemTypes=(coh_elem_type,))
 
 if __name__ == '__main__':
     mesh_continuum_part()
