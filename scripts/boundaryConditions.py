@@ -33,20 +33,24 @@ def setup_assembly_and_run(L=70.0, total_thickness=1.0, applied_strain=0.025,
     part_name = 'Specimen_Orphan' if 'Specimen_Orphan' in model.parts.keys() else 'Specimen'
     part = model.parts[part_name]
 
-# === اعمال جهت‌گیری متریال مستقیماً روی المان‌های شبکه مستقل ===
-    import regionToolset
     # === اعمال جهت‌گیری سراسری متریال روی کل شبکه مستقل ===
     import regionToolset
-    all_elements = part.elements
-    part.MaterialOrientation(
-        region=regionToolset.Region(elements=all_elements),
-        orientationType=GLOBAL,
-        axis=AXIS_3,
-        additionalRotationType=ROTATION_NONE,
-        localCsys=None,
-        fieldName='',
-        stackDirection=STACK_3
-    )
+    # الف) این خطوط را به طور کامل از فایل پاک کنید تا سیستم مختصات ترک‌ها خراب نشود:
+    # all_elements = part.elements
+    # part.MaterialOrientation(
+    #     region=regionToolset.Region(elements=all_elements),
+    #     orientationType=GLOBAL, ... )
+    
+    # ب) درخواست خروجی خرابی را از حالت شرطی خارج کرده و صریحاً آن را طلب کنید.
+    # این کد را جایگزین بلوک if 'F-Output-1' قبلی کنید:
+    if 'F-Output-1' in model.fieldOutputRequests.keys():
+        model.fieldOutputRequests['F-Output-1'].setValues(
+            variables=('S', 'E', 'U', 'RF', 'SDEG', 'STATUS', 'DMICRT'))
+    else:
+        model.FieldOutputRequest(
+            name='F-Output-Damage', 
+            createStepName='Step-1',
+            variables=('S', 'E', 'U', 'RF', 'SDEG', 'STATUS', 'DMICRT'))
     # =======================================================
     # ===============================================================
     if INSTANCE_NAME not in assembly.instances.keys():
